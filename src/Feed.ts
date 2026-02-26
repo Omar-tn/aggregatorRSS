@@ -22,31 +22,27 @@ export type Feed = typeof feeds.$inferSelect;
 export type User = typeof users.$inferSelect;
 
 
-export async function createFeed(...args: string[]) {
+export async function createFeed(id: string, ...args: string[]) {
 
-    let userName = await readConfig().currentUserName;
-    let userID = (await getUserByName(userName)).id;
-
+    let result  ;
+    
     try{
 
-        const [result] = await db.insert(feeds).values({ 
+         [result] = await db.insert(feeds).values({ 
             name: args[0],
             url: args[1],
-            user_id: userID }).returning();
+            user_id: id }).returning();
         
         console.log('Feed added successfully');
 
-        const res =  await db.insert(feed_follows).values({
-            feed_id: result.id,
-            user_id: userID
-        });
+        
     }catch(error){
         console.error('Error: ', error);
         process.exit(1);
     }
         
     
-    //return result;
+    return result;
 
 }
 
@@ -69,13 +65,13 @@ export async function getAllFeeds() {
 
 }
 
-export async function createFeedFollow(feed: Feed, user: User) {
+export async function createFeedFollow(feedId: string, userId: string) {
     
 
 
     let [res] = await db.insert(feed_follows).values({
-        user_id: user.id,
-        feed_id: feed.id
+        user_id: userId,
+        feed_id: feedId
     }).returning();
      let resp = await db.select({
         feedid: feed_follows.id,

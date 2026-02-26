@@ -3,12 +3,20 @@ import { readConfig, setUser } from "./config";
 import { createUser, deleteUsers, getCurrentUser, getUserById, getUserByName, getUsers } from "./lib/db/queries/users";
 import { get } from "node:http";
 import { fetchFeed } from "./rss";
-import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowForUser, printFeed } from "./Feed";
+import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowForUser, printFeed, User } from "./Feed";
 
 export type CommandHandler = (
     cmdName: string,
     ...args: string[]
 ) => Promise<void>;
+
+export type UserCommandHandler = (
+  cmdName: string,
+  user: User,
+  ...args: string[]
+) => Promise<void>;
+
+type middlewareLoggedIn = (handler: UserCommandHandler) => CommandHandler;
 
 export async function handlerLogin(cmdName: string, ...args: string[]) {
     if(!args.length){
@@ -79,13 +87,15 @@ export async function aggHandler(cmdName:string, ...args: string[]) {
 
 }
 
-export async function addfeedHandler(cmdName: string, ...args: string[]) {
+export async function addfeedHandler(cmdName: string, user: User, ...args: string[]) {
     
     if(args.length<2){
         console.error('Error: addfeed require 2 arguments !');
         process.exit(1);
     }
-    await createFeed(...args);
+    let feed = await createFeed(user.id, ...args);
+    let ff= await createFeedFollow(feed.id,user.id);
+
 
 
 }
@@ -104,11 +114,11 @@ export async function feedsHandler(cmdName:string, ...args: string[]) {
 
 }
 
-export async function followHandler(cmdName: string, url:string) {// params
+export async function followHandler(cmdName: string, user: User, url:string) {// params
     
     let feed = await getFeedByURL(url);
-    let user = await getUserByName(readConfig().currentUserName);
-    let res = await createFeedFollow(feed,user);
+    
+    let res = await createFeedFollow(feed.id,user.id);
     console.log('Feed\'s name: ',feed.name);
     console.log('User\'s name: ', user.name);
 
@@ -116,9 +126,9 @@ export async function followHandler(cmdName: string, url:string) {// params
 
 }
 
-export async function followingHandler() { //params
+export async function followingHandler(cmdName: string, user: User, ...args: string[]) { //params
     
-    let user = await getCurrentUser();
+    
     let res = await getFeedFollowForUser(user);
     res.forEach(e => {
         console.log(e.feeds.name);
