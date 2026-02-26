@@ -1,5 +1,5 @@
 import { register } from "node:module";
-import { registerCommand, CommmandsRegistry, handlerLogin, registerHandler, runCommand, resetHandler, usersHandler, aggHandler, addfeedHandler, feedsHandler, followHandler, followingHandler } from "./commands.js";
+import { registerCommand, CommmandsRegistry, handlerLogin, registerHandler, runCommand, resetHandler, usersHandler, aggHandler, addfeedHandler, feedsHandler, followHandler, followingHandler, unfollowHander } from "./commands.js";
 import { middlewareLoggedIn } from "./middlewareLoggedIn.js";
 import { setUser, readConfig } from "./config.js";
 import {argv} from 'node:process';
@@ -16,7 +16,8 @@ async function main() {
   registerCommand(commandRegistry, 'addfeed', middlewareLoggedIn(addfeedHandler));
   registerCommand(commandRegistry, 'feeds' , feedsHandler);
   registerCommand(commandRegistry, 'follow', middlewareLoggedIn(followHandler));
-  registerCommand(commandRegistry, 'following', middlewareLoggedIn(followingHandler))
+  registerCommand(commandRegistry, 'following', middlewareLoggedIn(followingHandler));
+  registerCommand(commandRegistry, 'unfollow', middlewareLoggedIn(unfollowHander));
   
   
   //console.log (await getUserByName('lane'));

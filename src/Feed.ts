@@ -2,7 +2,7 @@ import { readConfig } from "./config";
 import { db } from "./lib/db";
 import { getUserByName } from "./lib/db/queries/users";
 import { feed_follows, feeds, users } from "./lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 /* export type Feed = {
     title: string;
@@ -98,6 +98,13 @@ export async function getFeedFollowForUser(user:User) {
     let res = await db.select().from(feed_follows).where(eq(feed_follows.user_id, user.id))
     .innerJoin(users,eq(users.id, feed_follows.user_id))
     .innerJoin(feeds, eq(feed_follows.feed_id , feeds.id));
+    return res;
+
+}
+
+export async function unfollow(feed:Feed, user: User) {
+    
+    let res = await db.delete(feed_follows).where(and(eq(feed_follows.user_id,user.id), eq(feed_follows.feed_id,feed.id)));
     return res;
 
 }

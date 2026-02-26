@@ -3,7 +3,7 @@ import { readConfig, setUser } from "./config";
 import { createUser, deleteUsers, getCurrentUser, getUserById, getUserByName, getUsers } from "./lib/db/queries/users";
 import { get } from "node:http";
 import { fetchFeed } from "./rss";
-import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowForUser, printFeed, User } from "./Feed";
+import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowForUser, printFeed, unfollow, User } from "./Feed";
 
 export type CommandHandler = (
     cmdName: string,
@@ -114,8 +114,14 @@ export async function feedsHandler(cmdName:string, ...args: string[]) {
 
 }
 
-export async function followHandler(cmdName: string, user: User, url:string) {// params
+export async function followHandler(cmdName: string, user: User, ...args:string[]) {// params
     
+    if(args.length<1){
+        console.error('Error: Expect URL !');
+        process.exit(1);
+    }
+    let url = args[0];
+
     let feed = await getFeedByURL(url);
     
     let res = await createFeedFollow(feed.id,user.id);
@@ -133,6 +139,28 @@ export async function followingHandler(cmdName: string, user: User, ...args: str
     res.forEach(e => {
         console.log(e.feeds.name);
     })
+
+}
+
+export async function unfollowHander(cmdName: string, user: User, ...args: string[]) {
+    
+        if(args.length<1){
+        console.error('Error: Expect URL !');
+        process.exit(1);
+    }
+    let url = args[0];
+
+    let feed = await getFeedByURL(url);
+
+    let res = await unfollow(feed,user);
+
+    if(!res){
+        console.error('Error: Unfollow Failed !');
+        process.exit(1);
+    }
+    console.log('Unfollowed!');
+
+
 
 }
 
