@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1771857705567,
+      "tag": "0000_workable_adam_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772033483649,
+      "tag": "0001_panoramic_morph",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772061726290,
+      "tag": "0002_gorgeous_the_hood",
+      "breakpoints": true
+    }
+  ]
+}
