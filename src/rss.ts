@@ -7,12 +7,12 @@ export async function fetchFeed(feedURL:string) {
 
     const res = await fetch(feedURL,{
 
-        method: 'get',
+        //method: 'get',
         headers: {
-            'content-Type' :'application/json',
+            accept :'application/rss+xml',
             'User-Agent' : 'gator'
         },
-        mode: 'cors'
+        //mode: 'cors'
 
 
         
@@ -21,14 +21,14 @@ export async function fetchFeed(feedURL:string) {
     let text =  await res.text();
     let parsObj = new XMLParser();
     let parsed = await parsObj.parse(text);
-    console.log(parsed);
+    //console.log(parsed);
     parsed = parsed.rss;
     if(!parsed.channel){
         console.error('No channel found!')
         process.exit(1);
     }
 
-    if(!parsed.channel.title || !parsed.channel.link || !parsed.channel.description ){
+    if(!parsed.channel.title || !parsed.channel.link || !parsed.channel.description || !parsed.channel.item ){
         console.error('Fields not found!')
         process.exit(1);
     }
@@ -53,7 +53,7 @@ export async function fetchFeed(feedURL:string) {
             }) ;
         });
     else
-        channel.item = [];
+        items = [channel.item];
 
     let obj = {
         title: channel.title,

@@ -2,7 +2,8 @@ import { readConfig } from "./config";
 import { db } from "./lib/db";
 import { getUserByName } from "./lib/db/queries/users";
 import { feed_follows, feeds, users } from "./lib/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { fetchFeed } from "./rss";
 
 /* export type Feed = {
     title: string;
@@ -106,5 +107,50 @@ export async function unfollow(feed:Feed, user: User) {
     
     let res = await db.delete(feed_follows).where(and(eq(feed_follows.user_id,user.id), eq(feed_follows.feed_id,feed.id)));
     return res;
+
+}
+
+export async function markFeedFetched(feedId:string) {
+    
+    let res = await db.update(feeds).set({
+       
+        
+        last_fetched_at: new Date(), 
+    }).where(eq(feeds.id, feedId));
+
+}
+
+export async function getNextFeedToFetch() {
+    
+    let res = await db.select().from(feeds).orderBy(sql`${feeds.last_fetched_at} asc nulls first`).limit(1);
+    return res;
+
+}
+
+export async function scrapeFeeds() {
+    
+    let fs = await getNextFeedToFetch();
+    let feed = fs[0];
+    if(!feed){
+            console.log('no feed to fetch')
+            return;
+    }
+    
+
+    await markFeedFetched( feed.id);
+
+
+    let feedWithItems = await fetchFeed(feed.url);
+
+   /*  feedWithItems.items.forEach((i)=>{
+        console.log(i.title);
+    }); */
+
+
+    console.log(
+        `Feed ${feed.name} collected, ${feedWithItems.items.length} posts found`,
+    );
+    
+
 
 }

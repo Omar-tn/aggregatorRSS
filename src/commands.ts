@@ -3,7 +3,9 @@ import { readConfig, setUser } from "./config";
 import { createUser, deleteUsers, getCurrentUser, getUserById, getUserByName, getUsers } from "./lib/db/queries/users";
 import { get } from "node:http";
 import { fetchFeed } from "./rss";
-import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowForUser, printFeed, unfollow, User } from "./Feed";
+import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowForUser, printFeed, scrapeFeeds, unfollow, User } from "./Feed";
+import { integer } from "drizzle-orm/gel-core";
+import { parseDuration, convertToMilliseconds } from "./parseDuration";
 
 export type CommandHandler = (
     cmdName: string,
@@ -79,10 +81,46 @@ export async function usersHandler(cmdName: string, ...args: string[]) {
 
 export async function aggHandler(cmdName:string, ...args: string[]) {
     
+    if(args.length<1){
+        console.error('Error: Expect duration argument');
+        process.exit(1);
+    }
     
-    let obj = await fetchFeed('https://www.wagslane.dev/index.xml');
+   /*  let obj = await fetchFeed('https://techcrunch.com/feed/');// fetchFeed('https://www.wagslane.dev/index.xml');
 
-    console.log(obj);
+    console.log(obj); */
+    
+    let duration = args[0];
+
+    let match = parseDuration(duration);
+    if(match)
+        if(match.length<3){
+            console.error('Error: Expect valid duration argument');
+            process.exit(1);
+        }
+
+    let num = parseInt(match![1]);
+    let unit = match![2];
+    
+    let intervalMs = convertToMilliseconds(num, unit);
+    console.log('Collecting feeds every ', match![1], match![2]);
+
+    scrapeFeeds().catch(handleError);
+     
+    scrapeFeeds();//.catch(handleError)
+    const interval = setInterval(() => {
+        scrapeFeeds().catch(handleError);
+    }, intervalMs);
+
+    await new Promise<void>((resolve) => {
+        process.on("SIGINT", () => {
+            console.log("Shutting down feed aggregator...");
+            clearInterval(interval);
+            resolve();
+        });
+    });
+    
+    
 
 
 }
@@ -183,3 +221,8 @@ export async function runCommand (registry: CommmandsRegistry, cmdName: string, 
     }
     let res = await handler(cmdName, ...args);
 }
+function handleError(reason: any): PromiseLike<never> {
+    console.error("Error during feed scraping:", reason);
+    return Promise.reject(reason);
+}
+

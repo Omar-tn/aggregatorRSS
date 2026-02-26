@@ -1,0 +1,1 @@
+ALTER TABLE "feeds" RENAME COLUMN "fetched_at" TO "last_fetched_at";
