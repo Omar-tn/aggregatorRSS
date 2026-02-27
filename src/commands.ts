@@ -7,6 +7,9 @@ import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowF
 import { integer } from "drizzle-orm/gel-core";
 import { parseDuration, convertToMilliseconds } from "./parseDuration";
 import { getPostsForUser } from "./lib/db/Post";
+import { middlewareLoggedIn } from "./middlewareLoggedIn";
+import { feeds } from "./lib/db/schema";
+import { cp } from "node:fs";
 
 export type CommandHandler = (
     cmdName: string,
@@ -181,7 +184,7 @@ export async function followingHandler(cmdName: string, user: User, ...args: str
 
 }
 
-export async function unfollowHander(cmdName: string, user: User, ...args: string[]) {
+export async function unfollowHandler(cmdName: string, user: User, ...args: string[]) {
     
         if(args.length<1){
         console.error('Error: Expect URL !');
@@ -218,6 +221,112 @@ export async function browseHandler(nmdName: string, user: User, ...args: string
         console.log(`Link: ${e.url}`);
         console.log(`=====================================`);   
     })
+
+}
+
+export async function helpHanler(cmdName:string, ...args:string[]) {
+    
+    let commands = getCommands();
+    
+    for( let command in commands){
+
+        console.log(command,"usage: ",commands[command].usage);
+        console.log("description: ",commands[command].description);
+        console.log('=============================================\n');
+        
+
+
+    }
+
+
+}
+
+export type commmandDocs ={
+    [cmdName: string] : Command
+
+}
+
+export type Command = {
+    name: string,
+    usage: string,
+    description: string
+    callback: CommandHandler
+}
+
+export function getCommands(): Record<string,Command>{
+
+    return {
+        register: {
+        name: "register",
+        usage: "register <username>",
+        description: "registers user in database",
+        callback: registerHandler,
+        },
+        // can add more commands here
+        login :{
+            name: "login",
+            description: "login as user",
+            usage: "login <username>",
+            callback: handlerLogin
+        },
+        reset: {
+            name: "reset",
+            usage: "reset",
+            description: "Clears database's users",
+            callback: resetHandler
+        },
+        users: {
+            name: "users",
+            usage: "users",
+            description: "Lists all the users and indicates which one is currently logged in.",
+            callback: usersHandler
+        },
+        agg: {
+            name: "agg",
+            usage: "agg <duration>",
+            description: "Fetches the olddest/never fetched feed and prints its posts every specific period in this format: (amount)(ms | s | m | h )",
+            callback: aggHandler
+        },
+        addfeed: {
+            name: "addfeed",
+            usage: "addfeed <name> <url>",
+            description: "Adds feed to feeds database by the current user",
+            callback: middlewareLoggedIn(addfeedHandler)
+
+
+        },
+        feeds: {
+            name: "feeds",
+            usage: "feeds ",
+            description: "Lists all feeds in database",
+            callback: feedsHandler
+        },
+        follow: {
+            name: "follow",
+            usage: "follow <url>",
+            description: "Makes the current user to follow the feeds of the url",
+            callback: middlewareLoggedIn(followHandler)
+        },
+        following: {
+            name: "following",
+            usage: "following",
+            description: "Prints all the names of the feeds the current user is following",
+            callback: middlewareLoggedIn(followingHandler)
+        },
+        unfollow: {
+            name: "unfollow",
+            usage: "unfollow <url>",
+            description: "Makes the current user to unfollow the feeds of the url",
+            callback: middlewareLoggedIn(unfollowHandler)
+        },
+        browse: {
+            name: "browse",
+            usage: "browse [limit]",
+            description: "Gets the latest posts for the user with optional number limit of posts",
+            callback: middlewareLoggedIn(browseHandler)
+        }
+    };
+
 
 }
 
