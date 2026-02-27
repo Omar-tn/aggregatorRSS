@@ -4,6 +4,9 @@ import { getUserByName } from "./lib/db/queries/users";
 import { feed_follows, feeds, users } from "./lib/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 import { fetchFeed } from "./rss";
+import { createPost, getPostByURL } from "./lib/db/Post";
+import { stringify } from "node:querystring";
+import { json } from "drizzle-orm/pg-core";
 
 /* export type Feed = {
     title: string;
@@ -150,7 +153,30 @@ export async function scrapeFeeds() {
     console.log(
         `Feed ${feed.name} collected, ${feedWithItems.items.length} posts found`,
     );
+
+    let items = feedWithItems.items;
+
+    for ( let e of items){
+        let found = await getPostByURL(e.link);
+        let res;
+        let published = new Date(e.pubDate);
+        if(isNaN(published.getTime())){
+            console.error('Invalid datr for post: ',e.title);
+            continue;
+        }
+        if(!found)
+            res = await createPost(e.title, e.link, published, feed.id, e.description);
+        console.log('created post of title: ', e.title);
+        
+    }
     
 
+
+}
+
+export async function getFeedsFromUser(userId:string) {
+    
+    let res = db.select().from(feeds).where(eq(feeds.user_id, userId));
+    return res;
 
 }

@@ -6,6 +6,7 @@ import { fetchFeed } from "./rss";
 import { createFeed, createFeedFollow, getAllFeeds, getFeedByURL, getFeedFollowForUser, printFeed, scrapeFeeds, unfollow, User } from "./Feed";
 import { integer } from "drizzle-orm/gel-core";
 import { parseDuration, convertToMilliseconds } from "./parseDuration";
+import { getPostsForUser } from "./lib/db/Post";
 
 export type CommandHandler = (
     cmdName: string,
@@ -105,7 +106,7 @@ export async function aggHandler(cmdName:string, ...args: string[]) {
     let intervalMs = convertToMilliseconds(num, unit);
     console.log('Collecting feeds every ', match![1], match![2]);
 
-    scrapeFeeds().catch(handleError);
+    //scrapeFeeds().catch(handleError);
      
     scrapeFeeds();//.catch(handleError)
     const interval = setInterval(() => {
@@ -199,6 +200,24 @@ export async function unfollowHander(cmdName: string, user: User, ...args: strin
     console.log('Unfollowed!');
 
 
+
+}
+
+export async function browseHandler(nmdName: string, user: User, ...args: string[]) {
+    
+    let limit;
+    if(args.length> 0)
+        limit = parseInt(args[0]);
+
+    let res = await getPostsForUser(user, limit??2);
+    console.log(`Found ${res.length} posts for user ${user.name}`);
+    res.forEach((e)=>{
+         console.log(`${e.publishedAt} from ${e.feedName}`);
+        console.log('*** title: ',e.title);
+        console.log('   ',e.description);
+        console.log(`Link: ${e.url}`);
+        console.log(`=====================================`);   
+    })
 
 }
 
